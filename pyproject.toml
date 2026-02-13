@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trend-miner"
+version = "0.1.0"
+description = "L1 Lightweight Trend Miner - RSS aggregation, topic modeling with BERTopic"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "bertopic>=0.16.0",
+    "sentence-transformers>=2.2.0",
+    "hdbscan>=0.8.0",
+    "umap-learn>=0.5.0",
+    "scikit-learn>=1.0.0",
+    "numpy>=1.21.0",
+    "feedparser>=6.0.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "tldextract>=5.0.0",
+    "psycopg2-binary>=2.9.0",
+    "langdetect>=1.0.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.setuptools]
+packages = ["trend_miner", "trend_miner.collectors", "trend_miner.processing", "trend_miner.storage", "trend_miner.utils"]

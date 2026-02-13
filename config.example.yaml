@@ -1,0 +1,152 @@
+# L1 Trend Miner Configuration Example
+
+# 基本設定
+run_timezone: "Asia/Taipei"
+lookback_days: 7
+max_items_per_feed: 50
+top_k_topics: 10
+min_items_to_cluster: 30
+output_dir: "out"
+
+# 穩定性設定 (Determinism - 必須設定以確保重跑穩定)
+global_random_seed: 42
+tldextract_cache_dir: ".tldextract_cache"
+
+# 去重策略
+dedupe_strategy: "url_then_hash"
+
+# Noise 處理
+noise_handling: "drop"  # drop | keep
+
+# Embedding Cache
+enable_embedding_cache: true
+embedding_cache_dir: "memory/embeddings"
+
+# 語言偵測 (可選，預設關閉)
+enable_language_detect: false
+
+# 時間桶間隔 (Gate velocity 計算用)
+bucket_interval: "daily"  # daily | hourly
+
+# RSS Feeds（20-40 個主流財經 feeds，含權重分級）
+rss_feeds:
+  # Tier 1: 主流財經媒體 (High Weight 0.9-1.0)
+  - name: "Reuters Business"
+    url: "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best"
+    weight: 1.0
+    category: "news"
+    market: "GLOBAL"
+    language: "en"
+  
+  - name: "Bloomberg Markets"
+    url: "https://feeds.bloomberg.com/markets/news.rss"
+    weight: 0.95
+    category: "markets"
+    market: "GLOBAL"
+    language: "en"
+  
+  - name: "Financial Times"
+    url: "https://www.ft.com/?format=rss"
+    weight: 0.95
+    category: "news"
+    market: "GLOBAL"
+    language: "en"
+  
+  - name: "Wall Street Journal Markets"
+    url: "https://feeds.a.dj.com/rss/RSSMarketsMain.xml"
+    weight: 0.95
+    category: "markets"
+    market: "US"
+    language: "en"
+  
+  # Tier 2: 官方機構與權威來源 (Weight 0.8-0.9)
+  - name: "Federal Reserve News"
+    url: "https://www.federalreserve.gov/feeds/press_all.xml"
+    weight: 0.9
+    category: "central_bank"
+    market: "US"
+    language: "en"
+  
+  - name: "SEC Press Releases"
+    url: "https://www.sec.gov/news/pressreleases.rss"
+    weight: 0.85
+    category: "regulatory"
+    market: "US"
+    language: "en"
+  
+  - name: "ECB Press"
+    url: "https://www.ecb.europa.eu/rss/press.html"
+    weight: 0.85
+    category: "central_bank"
+    market: "GLOBAL"
+    language: "en"
+  
+  # Tier 3: 主流科技與商業媒體 (Weight 0.7-0.8)
+  - name: "TechCrunch"
+    url: "https://techcrunch.com/feed/"
+    weight: 0.75
+    category: "tech"
+    market: "GLOBAL"
+    language: "en"
+  
+  - name: "CNBC Top News"
+    url: "https://www.cnbc.com/id/100003114/device/rss/rss.html"
+    weight: 0.8
+    category: "news"
+    market: "US"
+    language: "en"
+  
+  - name: "Yahoo Finance"
+    url: "https://finance.yahoo.com/news/rssindex"
+    weight: 0.7
+    category: "markets"
+    market: "US"
+    language: "en"
+  
+  # Tier 4: 區域性重要媒體 (Weight 0.6-0.7)
+  - name: "Nikkei Asia"
+    url: "https://asia.nikkei.com/rss/feed/nar"
+    weight: 0.75
+    category: "news"
+    market: "GLOBAL"
+    language: "en"
+  
+  - name: "South China Morning Post Business"
+    url: "https://www.scmp.com/rss/2/feed"
+    weight: 0.7
+    category: "business"
+    market: "GLOBAL"
+    language: "en"
+
+# Watchlist (可選)
+watchlist_tickers: []
+watchlist_keywords: []
+
+# BERTopic 參數
+bertopic:
+  embedding_model: "paraphrase-multilingual-MiniLM-L12-v2"
+  min_topic_size: 15
+  nr_topics: null  # auto
+  top_n_words: 15
+  calculate_probabilities: false
+  
+  # UMAP 參數
+  umap_n_neighbors: 15
+  umap_n_components: 5
+  umap_min_dist: 0.0
+  umap_metric: "cosine"
+  umap_random_state: 42
+  
+  # HDBSCAN 參數
+  hdbscan_min_cluster_size: null  # 若 null 則等於 min_topic_size
+  hdbscan_min_samples: null  # 若 null 則等於 min_topic_size // 2
+  hdbscan_metric: "euclidean"
+
+# Memory Layer
+memory:
+  backend: "files"  # files | postgres
+  postgres_dsn: "TREND_MINER_PG_DSN"  # 環境變數名稱
+  memory_fallback: "files"  # none | files (production 建議 none)
+  write_runs: true
+  write_items: true
+  write_topics: true
