@@ -145,7 +145,7 @@ bertopic:
 # Storage Layer (取代原 Memory Layer)
 storage:
   mode: "file"  # file | postgres
-  postgres_dsn: null  # "postgresql://user:password@localhost:5432/trend_miner"
+  postgres_dsn: null  # "postgresql://user:password@localhost:5433/trend_miner"
 
 # Export (Optional file dump for postgres mode)
 export:

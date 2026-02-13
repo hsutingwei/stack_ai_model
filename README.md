@@ -103,13 +103,21 @@ storage:
 
 #### Postgres Mode (生產環境)
 
-##### 1. 建立資料庫
+##### 1. 啟動資料庫 (使用 Docker)
+
+專案已包含 `docker-compose.yml`，可快速啟動並自動初始化 Schema。
 
 ```bash
-# 建立資料庫
-createdb trend_miner
+# 啟動 Postgres (背景執行)
+docker-compose up -d
 
-# 初始化 schema
+# 檢查狀態
+docker-compose ps
+```
+
+若不使用 Docker，請手動安裝 Postgres 並執行：
+```bash
+createdb trend_miner
 psql -d trend_miner -f init_trend_miner.sql
 ```
 
@@ -118,7 +126,9 @@ psql -d trend_miner -f init_trend_miner.sql
 ```yaml
 storage:
   mode: "postgres"
-  postgres_dsn: "postgresql://user:password@localhost:5432/trend_miner"
+  # 注意：若在 host 執行 python，localhost 指向本機 (Port 5433)
+  # 若 trend_miner 也在 docker 內，需改用 container name
+  postgres_dsn: "postgresql://user:password@localhost:5433/trend_miner"
 ```
 
 ##### 3. Optional: 同時匯出檔案 (Debug)
@@ -131,18 +141,25 @@ export:
 
 ##### 4. 驗證資料
 
+使用 `docker-compose exec` 直接在容器內執行 SQL (最穩健)：
+
 ```bash
 # 檢查 runs
-psql -d trend_miner -c "SELECT run_id, status, generated_at FROM runs ORDER BY generated_at DESC LIMIT 5;"
+docker-compose exec trend_miner_db psql -U user -d trend_miner -c "SELECT run_id, status, generated_at FROM runs ORDER BY generated_at DESC LIMIT 5;"
 
 # 檢查 items 數量
-psql -d trend_miner -c "SELECT run_id, COUNT(*) as item_count FROM items GROUP BY run_id;"
+docker-compose exec trend_miner_db psql -U user -d trend_miner -c "SELECT run_id, COUNT(*) as item_count FROM items GROUP BY run_id;"
 
 # 檢查 topics (Top 10 by score)
-psql -d trend_miner -c "SELECT topic_signature, topic_volume, narrative_signal_score FROM topics ORDER BY narrative_signal_score DESC LIMIT 10;"
+docker-compose exec trend_miner_db psql -U user -d trend_miner -c "SELECT topic_signature, topic_volume, narrative_signal_score FROM topics ORDER BY narrative_signal_score DESC LIMIT 10;"
 
 # 檢查 topic_buckets
-psql -d trend_miner -c "SELECT run_id, COUNT(DISTINCT topic_signature) as topic_count, COUNT(*) as bucket_count FROM topic_buckets GROUP BY run_id;"
+docker-compose exec trend_miner_db psql -U user -d trend_miner -c "SELECT run_id, COUNT(DISTINCT topic_signature) as topic_count, COUNT(*) as bucket_count FROM topic_buckets GROUP BY run_id;"
+```
+
+若有安裝本機 `psql`，也可連線至 `localhost:5433`：
+```bash
+psql -h localhost -p 5433 -U user -d trend_miner -c "..."
 ```
 
 ##### Schema 說明

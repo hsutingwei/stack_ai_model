@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  trend_miner_db:
+    image: postgres:15-alpine
+    container_name: trend_miner_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-trend_miner}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Mount the init script to auto-create tables on first startup
+      - ./init_trend_miner.sql:/docker-entrypoint-initdb.d/init_trend_miner.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-trend_miner}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
