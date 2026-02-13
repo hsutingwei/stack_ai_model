@@ -30,31 +30,36 @@ pip install -e .
 - `tldextract>=5.0.0`
 - `psycopg2-binary>=2.9.0` (Postgres 使用)
 
-## 快速開始
+## 快速開始 (Docker)
 
-### 1. 產生設定檔
+最簡單的方式是使用 Docker 執行，無需安裝 Python 環境。
 
+1. **啟動資料庫**：
 ```bash
-python -m trend_miner init-config --out my_config.yaml
+docker-compose up -d trend_miner_db
 ```
 
-### 2. 編輯設定檔
+2. **執行 Trend Miner (L1)**：
+```bash
+# 建置並執行 (第一次需較久下載模型)
+docker-compose run --rm trend_miner
 
-編輯 `my_config.yaml`，至少設定 RSS feeds：
-
-```yaml
-rss_feeds:
-  - name: "Reuters Business"
-    url: "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best"
-    weight: 1.0
-    category: "news"
-    market: "GLOBAL"
+# 或者手動指定指令
+docker-compose run --rm trend_miner python -m trend_miner run --config config.docker.yaml
 ```
 
-### 3. 執行
+## 快速開始 (Local Python)
 
+若你有 Python 3.9+ 環境：
+
+1. **安裝**：
 ```bash
-python -m trend_miner run --config my_config.yaml
+pip install -e .
+```
+
+2. **執行**：
+```bash
+python -m trend_miner run --config config.example.yaml
 ```
 
 ## 設定說明

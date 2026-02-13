@@ -1,0 +1,64 @@
+# L1 Trend Miner Configuration (Docker)
+# 專用於 Docker 內部執行的設定擋
+
+# 基本設定
+run_timezone: "Asia/Taipei"
+lookback_days: 7
+max_items_per_feed: 50
+top_k_topics: 10
+min_items_to_cluster: 30
+output_dir: "out"
+
+# 穩定性設定
+global_random_seed: 42
+tldextract_cache_dir: ".tldextract_cache"
+
+# 去重策略
+dedupe_strategy: "url_then_hash"
+
+# Noise 處理
+noise_handling: "drop"
+
+# Embedding Cache
+enable_embedding_cache: true
+embedding_cache_dir: "memory/embeddings"
+
+# 語言偵測
+enable_language_detect: false
+
+# 時間桶間隔
+bucket_interval: "daily"
+
+# RSS Feeds (範例)
+rss_feeds:
+  - name: "Reuters Business"
+    url: "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best"
+    weight: 1.0
+    category: "news"
+    market: "GLOBAL"
+    language: "en"
+
+  - name: "TechCrunch"
+    url: "https://techcrunch.com/feed/"
+    weight: 0.75
+    category: "tech"
+    market: "GLOBAL"
+    language: "en"
+
+# BERTopic 參數
+bertopic:
+  embedding_model: "paraphrase-multilingual-MiniLM-L12-v2"
+  min_topic_size: 15
+  top_n_words: 15
+  umap_random_state: 42
+
+# Storage Layer (Docker Internal)
+storage:
+  mode: "postgres"
+  # 注意：在 container 內，hostname 需設為 'trend_miner_db' (port 5432)
+  postgres_dsn: "postgresql://user:password@trend_miner_db:5432/trend_miner"
+
+# Export
+export:
+  enable_file_dump: true
+  output_dir: "exports"

@@ -21,5 +21,19 @@ services:
       timeout: 5s
       retries: 5
 
+  trend_miner:
+    build: .
+    image: trend_miner:latest
+    container_name: trend_miner_app
+    volumes:
+      - .:/app
+    depends_on:
+      trend_miner_db:
+        condition: service_healthy
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-trend_miner}
+
 volumes:
   postgres_data:
