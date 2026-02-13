@@ -77,13 +77,14 @@ def run(config: str):
     logger.info(f"Loading config: {config}")
     cfg = TrendMinerConfig.from_yaml(config)
     
-    # Generate run_id
+    # Generate run_id (UUID for database compatibility)
+    run_id = str(uuid.uuid4())
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_id = f"run_{timestamp}_{uuid.uuid4().hex[:8]}"
     logger.info(f"Run ID: {run_id}")
+    logger.info(f"Timestamp: {timestamp}")
     
-    # Create output directory
-    output_dir = Path(cfg.output_dir) / run_id
+    # Create output directory (use timestamp for readability)
+    output_dir = Path(cfg.output_dir) / f"run_{timestamp}_{run_id[:8]}"
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Initialize storage

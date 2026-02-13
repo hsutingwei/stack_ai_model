@@ -21,6 +21,7 @@ dependencies = [
     "tldextract>=5.0.0",
     "psycopg2-binary>=2.9.0",
     "langdetect>=1.0.9",
+    "click>=8.0.0",
 ]
 
 [project.optional-dependencies]
