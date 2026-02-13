@@ -43,17 +43,15 @@ class BERTopicConfig(BaseModel):
     hdbscan_metric: str = Field(default="euclidean", description="HDBSCAN metric")
 
 
-class MemoryConfig(BaseModel):
-    """記憶層後端設定"""
-    backend: Literal["files", "postgres"] = Field(default="files", description="儲存後端")
-    postgres_dsn: Optional[str] = Field(None, description="Postgres DSN (環境變數名稱)")
-    memory_fallback: Literal["none", "files"] = Field(
-        default="files",
-        description="Postgres 失敗時的降級策略 (production 建議 none)"
-    )
-    write_runs: bool = Field(default=True, description="是否寫入 runs")
-    write_items: bool = Field(default=True, description="是否寫入 items")
-    write_topics: bool = Field(default=True, description="是否寫入 topics")
+class StorageConfig(BaseModel):
+    """儲存後端設定"""
+    mode: Literal["file", "postgres"] = Field(default="file", description="儲存模式")
+    postgres_dsn: Optional[str] = Field(None, description="Postgres DSN 連線字串")
+
+class ExportConfig(BaseModel):
+    """檔案匯出設定 (Debug/Backup)"""
+    enable_file_dump: bool = Field(default=False, description="是否同時匯出檔案 (postgres 模式下)")
+    output_dir: str = Field(default="exports", description="匯出目錄")
 
 
 class TrendMinerConfig(BaseModel):
@@ -105,8 +103,11 @@ class TrendMinerConfig(BaseModel):
     # BERTopic
     bertopic: BERTopicConfig = Field(default_factory=BERTopicConfig, description="BERTopic 參數")
     
-    # Memory Layer
-    memory: MemoryConfig = Field(default_factory=MemoryConfig, description="記憶層設定")
+    # Storage Layer (取代原 Memory Layer)
+    storage: StorageConfig = Field(default_factory=StorageConfig, description="儲存層設定")
+    
+    # Export (Optional file dump)
+    export: ExportConfig = Field(default_factory=ExportConfig, description="檔案匯出設定")
     
     @classmethod
     def from_yaml(cls, yaml_path: str) -> "TrendMinerConfig":
@@ -115,9 +116,3 @@ class TrendMinerConfig(BaseModel):
         with open(yaml_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         return cls(**data)
-    
-    def get_postgres_dsn(self) -> Optional[str]:
-        """取得 Postgres DSN (從環境變數)"""
-        if self.memory.postgres_dsn:
-            return os.environ.get(self.memory.postgres_dsn)
-        return None

@@ -194,12 +194,16 @@ def run(config: str):
         }
         
         if storage:
-            storage.write_run(run_meta)
-            if cfg.memory.write_items:
-                storage.write_items(items, run_id)
-            if cfg.memory.write_topics:
-                storage.write_topics(top_topics, run_id)
-            click.echo(f"✓ Written to memory backend: {cfg.memory.backend}")
+            storage.save_run(run_meta)
+            storage.save_items(items)
+            storage.save_topics(top_topics)
+            click.echo(f"✓ Written to storage backend: {cfg.storage.mode}")
+        
+        # Optional file export (postgres mode)
+        if cfg.storage.mode == "postgres" and cfg.export.enable_file_dump:
+            export_dir = Path(cfg.export.output_dir) / run_id
+            write_output_files(export_dir, run_id, items, top_topics)
+            click.echo(f"✓ Exported files to {export_dir}")
         
         # Summary
         click.echo("\n" + "=" * 60)
@@ -222,7 +226,7 @@ def run(config: str):
         run_meta.status = "failed"
         run_meta.stats['error'] = str(e)
         if storage:
-            storage.write_run(run_meta)
+            storage.save_run(run_meta)
         raise
     finally:
         if storage and hasattr(storage, 'close'):
@@ -230,24 +234,22 @@ def run(config: str):
 
 
 def initialize_storage(cfg: TrendMinerConfig) -> Optional[object]:
-    """初始化儲存後端"""
-    if cfg.memory.backend == "postgres":
-        dsn = cfg.get_postgres_dsn()
-        if dsn:
-            try:
-                return PostgresStore(dsn)
-            except Exception as e:
-                logger.error(f"Failed to initialize Postgres: {e}")
-                if cfg.memory.memory_fallback == "files":
-                    logger.warning("Falling back to file storage")
-                    return FileStore()
-                else:
-                    raise
-        else:
-            logger.warning("Postgres DSN not found, using file storage")
-            return FileStore()
+    """初始化儲存後端（fail fast，不 fallback）"""
+    if cfg.storage.mode == "postgres":
+        dsn = cfg.storage.postgres_dsn
+        if not dsn:
+            raise ValueError("Postgres mode requires storage.postgres_dsn")
+        
+        # 連線失敗直接拋出異常（不 fallback）
+        logger.info(f"Initializing Postgres storage...")
+        return PostgresStore(dsn, auto_init_schema=True)
     
-    return FileStore()
+    elif cfg.storage.mode == "file":
+        logger.info("Using file storage backend")
+        return FileStore()
+    
+    else:
+        raise ValueError(f"Unsupported storage mode: {cfg.storage.mode}")
 
 
 def write_output_files(output_dir: Path, run_id: str, items, topics):

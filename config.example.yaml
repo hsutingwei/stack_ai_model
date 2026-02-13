@@ -142,11 +142,13 @@ bertopic:
   hdbscan_min_samples: null  # 若 null 則等於 min_topic_size // 2
   hdbscan_metric: "euclidean"
 
-# Memory Layer
-memory:
-  backend: "files"  # files | postgres
-  postgres_dsn: "TREND_MINER_PG_DSN"  # 環境變數名稱
-  memory_fallback: "files"  # none | files (production 建議 none)
-  write_runs: true
-  write_items: true
-  write_topics: true
+# Storage Layer (取代原 Memory Layer)
+storage:
+  mode: "file"  # file | postgres
+  postgres_dsn: null  # "postgresql://user:password@localhost:5432/trend_miner"
+
+# Export (Optional file dump for postgres mode)
+export:
+  enable_file_dump: false
+  output_dir: "exports"
+

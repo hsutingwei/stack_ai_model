@@ -87,36 +87,72 @@ bertopic:
   hdbscan_min_cluster_size: null    # null = min_topic_size
 ```
 
-### Memory Layer
+### Storage Layer
+
+L1 支援雙儲存後端：
+
+#### File Mode (預設，用於開發)
 
 ```yaml
-memory:
-  backend: "files"                  # files | postgres
-  postgres_dsn: "TREND_MINER_PG_DSN"  # 環境變數名稱
-  memory_fallback: "files"          # none | files (production 建議 none)
+storage:
+  mode: "file"
+  postgres_dsn: null
 ```
 
-#### Postgres 設定
+產出：`memory/runs/`, `memory/items/`, `memory/topics/`
 
-1. 建立資料庫：
+#### Postgres Mode (生產環境)
 
-```sql
-CREATE DATABASE trend_miner;
-```
-
-2. 設定環境變數：
+##### 1. 建立資料庫
 
 ```bash
-export TREND_MINER_PG_DSN="postgresql://user:password@localhost:5432/trend_miner"
+# 建立資料庫
+createdb trend_miner
+
+# 初始化 schema
+psql -d trend_miner -f init_trend_miner.sql
 ```
 
-3. 更新 config：
+##### 2. 設定 config
 
 ```yaml
-memory:
-  backend: "postgres"
-  memory_fallback: "none"  # Production: fail fast
+storage:
+  mode: "postgres"
+  postgres_dsn: "postgresql://user:password@localhost:5432/trend_miner"
 ```
+
+##### 3. Optional: 同時匯出檔案 (Debug)
+
+```yaml
+export:
+  enable_file_dump: true
+  output_dir: "exports"
+```
+
+##### 4. 驗證資料
+
+```bash
+# 檢查 runs
+psql -d trend_miner -c "SELECT run_id, status, generated_at FROM runs ORDER BY generated_at DESC LIMIT 5;"
+
+# 檢查 items 數量
+psql -d trend_miner -c "SELECT run_id, COUNT(*) as item_count FROM items GROUP BY run_id;"
+
+# 檢查 topics (Top 10 by score)
+psql -d trend_miner -c "SELECT topic_signature, topic_volume, narrative_signal_score FROM topics ORDER BY narrative_signal_score DESC LIMIT 10;"
+
+# 檢查 topic_buckets
+psql -d trend_miner -c "SELECT run_id, COUNT(DISTINCT topic_signature) as topic_count, COUNT(*) as bucket_count FROM topic_buckets GROUP BY run_id;"
+```
+
+##### Schema 說明
+
+- **runs**: 每次執行的 metadata (UUID primary key)
+- **items**: Item-level data，composite PK `(run_id, item_id)`
+- **topics**: Topic-level aggregation，composite PK `(run_id, topic_signature)`
+- **topic_buckets**: 時間桶統計，用於 velocity/THA 計算
+
+
 
 ## 輸出格式
 
@@ -169,7 +205,17 @@ ERROR - Error fetching feed Reuters: ...
 
 ### Postgres 連線失敗
 
-如果 Postgres 連線失敗且 `memory_fallback: "files"`，系統會自動降級到檔案儲存。Production 環境建議設為 `"none"` 以 fail fast。
+**Postgres mode 採用 fail-fast 策略，連線失敗會直接報錯**：
+
+```
+RuntimeError: Postgres connection failed (no fallback): ...
+```
+
+解決方式：
+1. 檢查 `postgres_dsn` 是否正確
+2. 確認 Postgres 服務運行中
+3. 驗證帳號密碼與資料庫存在
+4. 若需 debug，改用 `storage.mode: "file"`
 
 ### Items 數量太少，無法聚類
 

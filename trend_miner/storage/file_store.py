@@ -36,7 +36,7 @@ class FileStore:
         
         logger.info(f"FileStore initialized at {self.base_dir}")
     
-    def write_run(self, run_meta: RunMetadata) -> None:
+    def save_run(self, run_meta: RunMetadata) -> None:
         """寫入 run metadata"""
         file_path = self.runs_dir / f"{run_meta.run_id}.json"
         
@@ -45,8 +45,12 @@ class FileStore:
         
         logger.info(f"Written run metadata: {file_path}")
     
-    def write_items(self, items: List[ItemRecord], run_id: str) -> None:
+    def save_items(self, items: List[ItemRecord]) -> None:
         """寫入 items (JSONL格式)"""
+        if not items:
+            return
+        
+        run_id = items[0].run_id
         file_path = self.items_dir / f"{run_id}.jsonl"
         
         with open(file_path, 'w', encoding='utf-8') as f:
@@ -56,8 +60,12 @@ class FileStore:
         
         logger.info(f"Written {len(items)} items: {file_path}")
     
-    def write_topics(self, topics: List[TopicRecord], run_id: str) -> None:
+    def save_topics(self, topics: List[TopicRecord]) -> None:
         """寫入 topics (JSON格式)"""
+        if not topics:
+            return
+        
+        run_id = topics[0].run_id
         file_path = self.topics_dir / f"{run_id}.json"
         
         topics_data = [topic.model_dump() for topic in topics]
